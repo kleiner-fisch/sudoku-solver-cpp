@@ -15,12 +15,14 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/program_options.hpp>
 #include <exception>
 
 #include "Board.h"
 #include "Entry.h"
 #include "Solver.h"
 namespace pt = boost::property_tree;
+namespace po = boost::program_options;
 
 
 void Entry::setX(int x0) { x = x0; }
@@ -388,12 +390,39 @@ void load(const std::string &filename, std::vector<int> *values)
 
 }
 
-int main() {
+int main(int ac, char** av){
     auto startTime = std::chrono::high_resolution_clock::now();
+    
+
+    // Declare the supported options.
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "produce help message")
+        ("input", po::value< std::string >(), "absolute path to sudoku input file to solve");
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(ac, av, desc), vm);
+    po::notify(vm);    
+
+    if (vm.count("help")) {
+        std::cout << desc << "\n";
+        return 0;
+    }
+
+
+    if (vm.count("input")) {
+        std::cout << "input file was set to " << vm["input"].as<std::string>() << ".\n";
+    } else {
+        std::cout << "input file was not set.\n";
+        return 0;
+    }
+
+
     Board currentBoard;
 
     std::vector<int> start;
-    load("sudoku-example1.json", &start);
+    std::string absolutePath = vm["input"].as<std::string>();
+    load(absolutePath, &start);
 
     Solver solver = Solver(&start);
     solver.currentBoard.toString();
